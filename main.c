@@ -31,7 +31,9 @@ void showAllVectors(MatrixVectorStruct *MatrixVectorArray);
 void showMatrix(MatrixStruct *Matrix, char *type, int Position);
 void showVector(VectorStruct Vector, int Position);
 void operations(MatrixVectorStruct *MatrixVectorArray);
+void sumRestVectors(MatrixVectorStruct* MatrixVectorArray, char *OperationType);
 int confirmVectors(VectorStruct Vector1, VectorStruct Vector2, int numVector1, int numVector2, char *OperationType);
+int confirmQuestion(char *question);
 void showErrors(int ErrorCode, char *Component);
 
 int main() {
@@ -74,7 +76,7 @@ void options(MatrixVectorStruct *MatrixVectorArray) {
     while (1) {
         int type; 
 
-        printf("\nSelecciona la opcion deseada: \n");
+        printf("\n[!] Selecciona la opcion deseada: \n");
         printf("1.- Agregar Matriz\n");
         printf("2.- Agregar Vector\n");
         printf("3.- Ver opciones de operaciones\n");
@@ -117,6 +119,7 @@ void options(MatrixVectorStruct *MatrixVectorArray) {
             exit(0);
 
         default:
+            showErrors(5, "");
             break;
         };
     };
@@ -428,7 +431,7 @@ void showVector(VectorStruct Vector, int Position) {
             snprintf(ZValue, sizeof(ZValue), "%.2lfZ", Vector.Z);
         } else ZValue[0] = '\0';
 
-        printf("\n[#] Vector %d\n", Position + 1);
+        if (Position >= 0) printf("\n[#] Vector %d\n", Position + 1);
         printf("( %s%s%s )\n", XValue, YValue, ZValue);
         return;
 }
@@ -438,14 +441,14 @@ void operations(MatrixVectorStruct *MatrixVectorArray) {
     int option;
     
     while(1) {
-        printf("Ingresa el tipo de operacion que deseas hacer:\n");
+        printf("\n[!] Ingresa el tipo de operacion que deseas hacer:\n");
         printf("0.-  Regresar al menu\n");
         printf("--> Matrices <--\n");
         printf("1.- Suma de matrices\n");
         printf("2.- Resta de matrices\n");
         printf("3.- Multiplicacion de matrices\n");
         printf("4.- Multiplicacion por escalar\n");
-        printf("5.- Identificar tipo de relacion en matriz binaria\n\n");
+        printf("5.- Identificar tipo de relacion en matriz binaria\n");
         printf("--> Vectores <--\n");
         printf("6.- Suma de vectores\n");
         printf("7.- Resta de vectores\n");
@@ -453,12 +456,36 @@ void operations(MatrixVectorStruct *MatrixVectorArray) {
         printf("9.- Producto cruz\n");
         printf("--> ");
         scanf("%i", &option);
+
+        if (option >= 0 && option <= 9) {
+            break;
+        } else showErrors(5, "");
     }
 
+    switch (option) {
+        case 0:
+            break;
 
+        case 6:
+            sumRestVectors(MatrixVectorArray, "suma");
+            break;
+        
+        case 7: 
+            sumRestVectors(MatrixVectorArray, "resta");
+            break;
+
+        default:
+            break;
+    }
+    return;
 }
 
-void sumVectors(MatrixVectorStruct* MatrixVectorArray, char *OperationType) {
+void sumRestVectors(MatrixVectorStruct* MatrixVectorArray, char *OperationType) {
+    if (MatrixVectorArray -> VectorArrayLenght == 0) {
+        showErrors(3, "vectores");
+        return;
+    }
+
     int numVector1;
     int numVector2;
     VectorStruct Vector1;
@@ -476,33 +503,75 @@ void sumVectors(MatrixVectorStruct* MatrixVectorArray, char *OperationType) {
         printf("--> ");
         scanf("%d", &numVector2);
 
+        numVector1 -= 1;
+        numVector2 -= 1;
+
         Vector1 = MatrixVectorArray -> VectorArray[numVector1];
         Vector2 = MatrixVectorArray -> VectorArray[numVector2];
 
-        confirm = confirmVectors(Vector1, Vector2, numVector1, numVector1, OperationType);
+        confirm = confirmVectors(Vector1, Vector2, numVector1, numVector2, OperationType);
 
         if (confirm) break;
     }
 
+    if (strcmp(OperationType, "suma") == 0) {
+        resVector.X = Vector1.X + Vector2.X;
+        resVector.Y = Vector1.Y + Vector2.Y;
+        resVector.Z = Vector1.Z + Vector2.Z;
+    } else {
+        resVector.X = Vector1.X - Vector2.X;
+        resVector.Y = Vector1.Y - Vector2.Y;
+        resVector.Z = Vector1.Z - Vector2.Z;
+    }
 
+    printf("\n[*] Vector resultante:\n");
+    showVector(resVector, -1);
 
+    int confirm = confirmQuestion("Deseas agregar el vector resultante a la lista de vectores?");
+    if (confirm) {
+        char Component[90];
+        int tempVectorArrayLenght = MatrixVectorArray -> VectorArrayLenght + 1;
+        snprintf(Component, sizeof(Component), "vector resultante de %s entre vector #%d y #%d en la posicion del array #%d", 
+            OperationType, numVector1, numVector2, tempVectorArrayLenght);
 
+        VectorStruct *tempVectorArray = realloc(MatrixVectorArray -> VectorArray, sizeof(VectorStruct) * tempVectorArrayLenght);
+
+        if (tempVectorArray == NULL) {
+            showErrors(1, Component);
+            free(tempVectorArray);
+            return;
+        }
+
+        MatrixVectorArray -> VectorArray = tempVectorArray;
+        MatrixVectorArray -> VectorArray[tempVectorArrayLenght - 1] = resVector;
+        MatrixVectorArray -> VectorArrayLenght = tempVectorArrayLenght;
+
+        printf("\n[*] Vector almacenado correctamente en la posicion #%d\n\n", tempVectorArrayLenght);
+    }
+
+    return;
 }
 
 int confirmVectors(VectorStruct Vector1, VectorStruct Vector2, int numVector1, int numVector2, char *OperationType) {
-    int option;
+    int confirm;
     
     printf("\n[!] Confirma los vectores a %s:\n", OperationType);
         
     showVector(Vector1, numVector1);
     showVector(Vector2, numVector2);
 
+    confirm = confirmQuestion("Son correctos?");
+    return confirm;
+}
+
+int confirmQuestion(char *question) {
+    int option;
     while(1) {
-        printf("\n[*] Son correctos?\n");
+        printf("\n[?] %s\n", question);
         printf("1.- Si\n");
         printf("2.- No\n");
         printf("--> ");
-        scanf("%d", option);
+        scanf("%d", &option);
         
         if (option == 1) {
             return 1;
@@ -524,7 +593,7 @@ void showErrors(int ErrorCode, char *Component) {
             printf("[!] Error 2 (lessThan0Value): Valor menor o igual a 0 ingresado en %s.", Component);
             break;
         case 3:
-            printf("[!] Error 3 (emptyArray): No hay %s para mostrar.", Component);
+            printf("[!] Error 3 (emptyArray): No hay %s para operar.", Component);
             break;
         case 4:
             printf("[!] Error 4 (nullVector): El %s ingresado es nulo.", Component);
