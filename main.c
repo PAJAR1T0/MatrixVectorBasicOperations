@@ -23,35 +23,43 @@ typedef struct {
     VectorStruct *VectorArray;
 } MatrixVectorStruct;
 
-void options(MatrixVectorStruct *MatrixVectorArray);
-void addMatrix(MatrixVectorStruct *MatrixVectorArray);
-void addVector(MatrixVectorStruct *MatrixVectorArray);
-void showAllMatrix(MatrixVectorStruct *MatrixVectorArray, char *type);
-void showAllVectors(MatrixVectorStruct *MatrixVectorArray);
+int setMatrixVectorArray();
+void options();
+void addMatrix();
+void addVector();
+void showAllMatrix(char *type);
+void showAllVectors();
 void showMatrix(MatrixStruct *Matrix, char *type, int Position);
 void showVector(VectorStruct Vector, int Position);
-void operations(MatrixVectorStruct *MatrixVectorArray);
-void sumRestVectors(MatrixVectorStruct* MatrixVectorArray, char *OperationType);
+void operations();
+void sumRestVectors(char *OperationType);
 int confirmVectors(VectorStruct Vector1, VectorStruct Vector2, int numVector1, int numVector2, char *OperationType);
 int confirmQuestion(char *question);
 void showErrors(int ErrorCode, char *Component);
 
+MatrixVectorStruct *MatrixVectorArray;
+
 int main() {
+    if (!setMatrixVectorArray()) return 1;
+    options();
+}
+
+int setMatrixVectorArray() {
     MatrixVectorStruct *TempMatrixVectorArray = calloc(1, sizeof(*TempMatrixVectorArray));
 
     if (TempMatrixVectorArray == NULL) {
         showErrors(1, "estructura principal");
-        return 1;
+        return 0;
     }
 
-    MatrixVectorStruct *MatrixVectorArray = TempMatrixVectorArray;
+    MatrixVectorArray = TempMatrixVectorArray;
 
     MatrixStruct **TempMatrixArray = calloc(1, sizeof(*TempMatrixArray));
 
     if (TempMatrixArray == NULL) {
         showErrors(1, "arreglo de matrices");
         free(MatrixVectorArray);
-        return 1;
+        return 0;
     }
 
     MatrixVectorArray -> MatrixArray = TempMatrixArray;
@@ -62,17 +70,16 @@ int main() {
         showErrors(1, "arreglo de vectores");
         free(MatrixVectorArray -> MatrixArray);
         free(MatrixVectorArray);
-        return 1;
+        return 0;
     }
 
     MatrixVectorArray -> VectorArray = TempVector;
     MatrixVectorArray -> MatrixArrayLenght = 0;
     MatrixVectorArray -> VectorArrayLenght = 0;
-
-    options(MatrixVectorArray);
+    return 1;
 }
 
-void options(MatrixVectorStruct *MatrixVectorArray) {
+void options() {
     while (1) {
         int type; 
 
@@ -90,27 +97,27 @@ void options(MatrixVectorStruct *MatrixVectorArray) {
         switch (type)
         {
         case 1:
-            addMatrix(MatrixVectorArray);
+            addMatrix();
             break;
         
         case 2:
-            addVector(MatrixVectorArray);
+            addVector();
             break;
 
         case 3:
-            operations(MatrixVectorArray);
+            operations();
             break;
 
         case 4:
-            showAllMatrix(MatrixVectorArray, "originales");
+            showAllMatrix("originales");
             break;
 
         case 5:
-            showAllMatrix(MatrixVectorArray, "traspuestas");
+            showAllMatrix("traspuestas");
             break;
 
         case 6:
-            showAllVectors(MatrixVectorArray);
+            showAllVectors();
             break;
         
         case 7:
@@ -125,7 +132,7 @@ void options(MatrixVectorStruct *MatrixVectorArray) {
     };
 };
 
-void addMatrix(MatrixVectorStruct *MatrixVectorArray) {
+void addMatrix() {
     // nuevo tamano temporal de array
     int TempArrayLenght = MatrixVectorArray -> MatrixArrayLenght + 1;
     // inicializacion de tamanos de matriz
@@ -317,7 +324,7 @@ void addMatrix(MatrixVectorStruct *MatrixVectorArray) {
     return;
 };
 
-void addVector(MatrixVectorStruct *MatrixVectorArray) {
+void addVector() {
     int TempArrayLenght = MatrixVectorArray -> VectorArrayLenght + 1;
     double x = 0;
     double y = 0;
@@ -362,7 +369,7 @@ void addVector(MatrixVectorStruct *MatrixVectorArray) {
     return;
 }
 
-void showAllMatrix(MatrixVectorStruct *MatrixVectorArray, char *type) {
+void showAllMatrix(char *type) {
     if (MatrixVectorArray -> MatrixArrayLenght == 0) {
         showErrors(3, "Matriz");
         return;
@@ -378,7 +385,7 @@ void showAllMatrix(MatrixVectorStruct *MatrixVectorArray, char *type) {
     return;
 }
 
-void showAllVectors(MatrixVectorStruct *MatrixVectorArray) {
+void showAllVectors() {
     printf("\n--> Lista de vectores <--\n");
     for (int i = 0; i < MatrixVectorArray -> VectorArrayLenght; i++) {
         VectorStruct Vector = MatrixVectorArray -> VectorArray[i];
@@ -436,7 +443,7 @@ void showVector(VectorStruct Vector, int Position) {
         return;
 }
 
-void operations(MatrixVectorStruct *MatrixVectorArray) {
+void operations() {
 
     int option;
     
@@ -467,11 +474,11 @@ void operations(MatrixVectorStruct *MatrixVectorArray) {
             break;
 
         case 6:
-            sumRestVectors(MatrixVectorArray, "suma");
+            sumRestVectors("suma");
             break;
         
         case 7: 
-            sumRestVectors(MatrixVectorArray, "resta");
+            sumRestVectors("resta");
             break;
 
         default:
@@ -480,7 +487,7 @@ void operations(MatrixVectorStruct *MatrixVectorArray) {
     return;
 }
 
-void sumRestVectors(MatrixVectorStruct* MatrixVectorArray, char *OperationType) {
+void sumRestVectors(char *OperationType) {
     if (MatrixVectorArray -> VectorArrayLenght == 0) {
         showErrors(3, "vectores");
         return;
@@ -550,6 +557,10 @@ void sumRestVectors(MatrixVectorStruct* MatrixVectorArray, char *OperationType) 
     }
 
     return;
+}
+
+void pointProduct() {
+
 }
 
 int confirmVectors(VectorStruct Vector1, VectorStruct Vector2, int numVector1, int numVector2, char *OperationType) {
