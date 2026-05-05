@@ -6,6 +6,8 @@
 typedef struct {
     int rows;
     int cols;
+    int trasposeRows;
+    int trasposeCols;
     double **content;
     double **contentTraspose;
 } MatrixStruct;
@@ -26,12 +28,21 @@ typedef struct {
 int setMatrixVectorArray();
 void options();
 void addMatrix();
+int makeMatrixArrayBigger(int TempArrayLenght, char* Component);
+int getTrasposeMatrix(MatrixStruct *Matrix, int NewMatrixRows, int NewMatrixCols, int TempArrayLenght);
 void addVector();
 void showAllMatrix(char *type);
 void showAllVectors();
 void showMatrix(MatrixStruct *Matrix, char *type, int Position);
 void showVector(VectorStruct Vector, int Position);
 void operations();
+char **selectMatrixType(int numOfElements);
+void sumRestMatrix(char *OperationType);
+void addExistMatrixToArray(MatrixStruct *Matrix, int TempArrayLenght);
+double getRowColMatrixValue(MatrixStruct *Matrix, char *MatrixType, int row, int col);
+MatrixStruct **getMatrixArray(char *OperationType, char** matrixTypes);
+int confirmMatrix(MatrixStruct *Matrix1, int numMatrix1, char *MatrixType1, MatrixStruct *Matrix2, 
+        int numMatrix2, char *MatrixType2,char *OperationType);
 void sumRestVectors(char *OperationType);
 void pointProduct();
 void crossProduct();
@@ -126,7 +137,6 @@ void options() {
         
         case 7:
             printf("\n\n[!] Gracias por usar el programa\n\n");
-            
             exit(0);
 
         default:
@@ -142,6 +152,8 @@ void addMatrix() {
     // inicializacion de tamanos de matriz
     int NewMatrixRows = 0;
     int NewMatrixCols = 0;
+
+    int confirmation = 0;
     
     // creacion de componente para errores
     char Component[50];
@@ -149,15 +161,7 @@ void addMatrix() {
 
 
     // agrandamiento temporal de array de matrices en una posicion
-    MatrixStruct **TempMatrixArray = realloc(MatrixVectorArray -> MatrixArray, sizeof(MatrixStruct *) * TempArrayLenght);
-
-    
-    if (TempMatrixArray == NULL) {
-        showErrors(1, Component);
-        return;
-    };
-
-    MatrixVectorArray -> MatrixArray = TempMatrixArray;
+    if (!makeMatrixArrayBigger(TempArrayLenght, Component)) return;
 
     while (NewMatrixRows <= 0) {
         printf("\n [*] Ingresa el numero de filas que contiene la matriz %d:\n", TempArrayLenght);
@@ -187,6 +191,8 @@ void addMatrix() {
     
     Matrix -> rows = NewMatrixRows;
     Matrix -> cols = NewMatrixCols;
+    Matrix -> trasposeRows = NewMatrixCols;
+    Matrix -> trasposeCols = NewMatrixRows;
     
     double **TempContent = calloc(NewMatrixRows, sizeof(*TempContent));
 
@@ -251,6 +257,28 @@ void addMatrix() {
         };
     };
     
+    confirmation = getTrasposeMatrix(Matrix, NewMatrixRows, NewMatrixCols, TempArrayLenght);
+
+    if (confirmation) MatrixVectorArray -> MatrixArrayLenght = TempArrayLenght;
+    
+    return;
+};
+
+int makeMatrixArrayBigger(int TempArrayLenght, char* Component) {
+    MatrixStruct **TempMatrixArray = realloc(MatrixVectorArray -> MatrixArray, sizeof(MatrixStruct *) * TempArrayLenght);
+
+    
+    if (TempMatrixArray == NULL) {
+        showErrors(1, Component);
+        return 0;
+    };
+
+    MatrixVectorArray -> MatrixArray = TempMatrixArray;
+    return 1;
+}
+
+int getTrasposeMatrix(MatrixStruct *Matrix, int NewMatrixRows, int NewMatrixCols, int TempArrayLenght) {
+    char Component[50];
     double **TempContentTraspose = calloc(NewMatrixCols, sizeof(*TempContentTraspose));
 
     if (TempContentTraspose == NULL) {
@@ -275,7 +303,7 @@ void addMatrix() {
             }
         }
 
-        return;
+        return 0;
     }
 
     Matrix -> contentTraspose = TempContentTraspose;
@@ -311,7 +339,7 @@ void addMatrix() {
                 }
             }
 
-            return;
+            return 0;
         }
 
         Matrix -> contentTraspose[col] = TempRowTraspose;
@@ -322,11 +350,8 @@ void addMatrix() {
             Matrix -> contentTraspose[col][row] = Value;
         }
     }
-
-    MatrixVectorArray -> MatrixArrayLenght = TempArrayLenght;
-    
-    return;
-};
+    return 1;
+}
 
 void addVector() {
     int TempArrayLenght = MatrixVectorArray -> VectorArrayLenght + 1;
@@ -399,7 +424,7 @@ void showAllVectors() {
 }
 
 void showMatrix(MatrixStruct *Matrix, char *type, int Position) {
-        printf("\n[#] Matriz #%d\n\n", Position);
+        if (Position >= 0) printf("\n[#] Matriz #%d\n\n", Position);
         int rows = strcmp(type, "originales") == 0 ? Matrix -> rows : Matrix -> cols;
         int cols = strcmp(type, "originales") == 0 ? Matrix -> cols : Matrix -> rows;
 
@@ -472,6 +497,14 @@ void operations() {
             case 0:
                 return;
 
+            case 1:
+                sumRestMatrix("suma");
+                break;
+
+            case 2:
+                sumRestMatrix("resta");
+                break;
+
             case 6:
                 sumRestVectors("suma");
                 break;
@@ -493,6 +526,133 @@ void operations() {
                 break;
         }
     }
+}
+
+char **selectMatrixType(int numOfElements) {
+    char **matrixTypes = calloc(numOfElements, sizeof(*matrixTypes));
+
+    for (int i = 0; i < numOfElements; i++) {
+        int continueIterations = 0;
+        while(!continueIterations) {
+            int selection;
+
+            printf("\n [!] Selecciona el tipo de matriz %d:\n", i);
+            printf(" 1.- Originales\n");
+            printf(" 2.- Traspuesta\n");
+            printf(" --> ");
+            scanf("%d", &selection);
+
+            switch (selection) {
+            case 1:
+                matrixTypes[i] = "originales";
+                continueIterations = 1;
+                break;
+
+            case 2:
+                matrixTypes[i] = "traspuestas";
+                continueIterations = 1;
+                break;
+            
+            default:
+                showErrors(5, "");
+                break;
+            }
+        }
+    }
+
+    return matrixTypes;
+}
+
+void sumRestMatrix(char *OperationType) {
+    int TempArrayLenght = MatrixVectorArray -> MatrixArrayLenght + 1;
+    int Operationfactor = 0;
+
+    char **matrixTypes = selectMatrixType(2);
+    MatrixStruct **MatrixArray = getMatrixArray(OperationType, matrixTypes);
+    
+    if (MatrixArray[0] -> cols != MatrixArray[1] -> cols || MatrixArray[0] -> rows != MatrixArray[1] -> rows) {
+        showErrors(6, "");
+        return;
+    }
+
+    Operationfactor = (strcmp(OperationType, "suma") == 0) ? 1 : -1;
+
+    int rows = MatrixArray[0] -> rows;
+    int cols = MatrixArray[0] -> cols;
+    
+    // addMemoryValidation
+    MatrixStruct *resMatrix = calloc(1, sizeof(*resMatrix));
+    resMatrix -> content = calloc(rows, sizeof(double*));
+    resMatrix -> rows = rows;
+    resMatrix -> cols = cols;
+
+    for (int row = 0; row < rows; row++) {
+        resMatrix -> content[row] = calloc(cols, sizeof(double));
+        for (int col = 0; col < cols; col++) {
+            resMatrix -> content[row][col] = getRowColMatrixValue(MatrixArray[0], matrixTypes[0], row, col) + 
+                                             getRowColMatrixValue(MatrixArray[1], matrixTypes[1], row, col) * Operationfactor;
+        }
+    }
+    getTrasposeMatrix(resMatrix, rows, cols, TempArrayLenght);
+    addExistMatrixToArray(resMatrix, TempArrayLenght);
+    return;
+}
+
+void addExistMatrixToArray(MatrixStruct *Matrix, int TempArrayLenght) {
+    char Component[50];
+    snprintf(Component, sizeof(Component), "matriz %d", TempArrayLenght);
+
+    printf("\n [*] Matriz resultante:\n");
+    showMatrix(Matrix, "originales", -1);
+
+    int confirm = confirmQuestion("Deseas agregar el vector resultante a la lista de vectores?");
+    if (confirm) {
+        makeMatrixArrayBigger(TempArrayLenght, Component);
+        MatrixVectorArray -> MatrixArray[TempArrayLenght - 1] = Matrix;
+        MatrixVectorArray -> MatrixArrayLenght = TempArrayLenght;
+
+        printf("\n [*] Matriz almacenada correctamente en la posicion #%d\n", TempArrayLenght);
+    }
+    return;
+}
+
+double getRowColMatrixValue(MatrixStruct *Matrix, char *MatrixType, int row, int col) {
+    if (strcmp(MatrixType, "originales") == 0) {
+        return Matrix -> content[row][col];
+    } else {
+        return Matrix -> contentTraspose[row][col];
+    }
+}
+
+MatrixStruct **getMatrixArray(char *OperationType, char** matrixTypes) {
+    int confirm = 0;
+    int *elementsSelected = calloc(2, sizeof(*elementsSelected));
+
+    MatrixStruct **MatrixArray = calloc(2, sizeof(*MatrixArray));
+
+    while(!confirm) {
+        elementsSelected = selectElements("matrices", matrixTypes[0], matrixTypes[1], OperationType);
+        for (int i = 0; i < 2; i++) {
+            MatrixArray[i] = MatrixVectorArray -> MatrixArray[elementsSelected[i]];
+        }
+        confirm = confirmMatrix(MatrixArray[0], elementsSelected[0], matrixTypes[0], MatrixArray[1], 
+            elementsSelected[1], matrixTypes[1], OperationType);
+    }
+    return MatrixArray;
+}
+
+int confirmMatrix(MatrixStruct *Matrix1, int numMatrix1, char *MatrixType1, MatrixStruct *Matrix2, 
+        int numMatrix2, char *MatrixType2,char *OperationType) {
+    
+    int confirm;
+    
+    printf("\n [!] Confirma las matrices a %s:\n", OperationType);
+        
+    showMatrix(Matrix1, MatrixType1, numMatrix1);
+    showMatrix(Matrix2, MatrixType2, numMatrix2);
+
+    confirm = confirmQuestion("Son correctas?");
+    return confirm;
 }
 
 void sumRestVectors(char *OperationType) {
@@ -672,6 +832,9 @@ void showErrors(int ErrorCode, char *Component) {
             break;
         case 5:
             printf(" [!] Error 5 (wrongValue): El valor ingresado es incorrecto");
+            break;
+        case 6: 
+            printf(" [!] Error 6 (notSquareMatrix): No hay coincidencia entre el numero de filas y columnas de ambas matrices");
             break;
         default: 
             printf(" [!] Error desconocido en componente %s.", Component);
