@@ -25,6 +25,7 @@ typedef struct {
     VectorStruct *VectorArray;
 } MatrixVectorStruct;
 
+void welcome();
 int setMatrixVectorArray();
 void options();
 void addMatrix();
@@ -64,8 +65,39 @@ void showErrors(int ErrorCode, char *Component);
 MatrixVectorStruct *MatrixVectorArray;
 
 int main() {
+    welcome();
     if (!setMatrixVectorArray()) return 1;
     options();
+}
+
+void welcome() {
+    printf(
+        "          __ __\n"
+        "        ,;::\\::\\\n"
+        "      ,'/' `/'`/\n"
+        "  _\\,: '.,-'.-':.\n"
+        " -./\"'  :    :  :\\/, \n"
+        "  ::.  ,:____;__; :-\n"
+        "  :\"  ( .`-*'o*',);\n"
+        "   \\.. ` `---'`' /\n"
+        "    `:._..-   _.'\n"
+        "    ,;  .     `.\n"
+        "   /\"'| |       \\\n"
+        "  ::. ) :        :\n"
+        "  |\" (   \\       |\n"
+        "  :.(_,  :       ;\n"
+        "   \\'`-'_/      /\n"
+        "    `...   , _,'\n"
+        "     |,|  : |\n"
+        "     |`|  | |\n"
+        "     |,|  | |\n"
+        " ,--.;`|  | '..--.\n"
+        "/;' \"' ;  '..--.  ))\n"
+        "\\:.___(___   ) ))'\n"
+        "       SSt`-'-''\n"
+        "\n"
+        "    [!] Matrix & Vector System\n"
+    );
 }
 
 int setMatrixVectorArray() {
@@ -1163,3 +1195,4 @@ void showErrors(int ErrorCode, char *Component) {
     printf("\n\n");
     return;
 }
+
