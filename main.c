@@ -69,15 +69,17 @@ int main() {
 }
 
 int setMatrixVectorArray() {
+    // creacion de estructura principal para almacenar matrices y vectores
     MatrixVectorStruct *TempMatrixVectorArray = calloc(1, sizeof(*TempMatrixVectorArray));
 
     if (TempMatrixVectorArray == NULL) {
         showErrors(1, "estructura principal");
         return 0;
     }
-
+    // asignacion de memoria reservada al apuntador global
     MatrixVectorArray = TempMatrixVectorArray;
 
+    // creacion inicial del arreglo dinamico de matrices
     MatrixStruct **TempMatrixArray = calloc(1, sizeof(*TempMatrixArray));
 
     if (TempMatrixArray == NULL) {
@@ -85,9 +87,9 @@ int setMatrixVectorArray() {
         free(MatrixVectorArray);
         return 0;
     }
-
     MatrixVectorArray -> MatrixArray = TempMatrixArray;
 
+    // creacion inicial del arreglo dinamico de vectores
     VectorStruct *TempVector = calloc(1, sizeof(*TempVector));
 
     if (TempVector == NULL) {
@@ -96,7 +98,7 @@ int setMatrixVectorArray() {
         free(MatrixVectorArray);
         return 0;
     }
-
+    // inicializacion de apuntadores y tamanos de arreglos
     MatrixVectorArray -> VectorArray = TempVector;
     MatrixVectorArray -> MatrixArrayLenght = 0;
     MatrixVectorArray -> VectorArrayLenght = 0;
@@ -104,9 +106,11 @@ int setMatrixVectorArray() {
 }
 
 void options() {
+    // ciclo principal del menu hasta que el usuario decida salir
     while (1) {
         int type; 
 
+        // impresion de opciones principales del programa
         printf("\n [!] Selecciona la opcion deseada: \n");
         printf(" 1.- Agregar Matriz\n");
         printf(" 2.- Agregar Vector\n");
@@ -274,6 +278,7 @@ void addMatrix() {
 };
 
 int makeMatrixArrayBigger(int TempArrayLenght, char* Component) {
+    // redimensionamiento del arreglo de matrices al nuevo tamano temporal
     MatrixStruct **TempMatrixArray = realloc(MatrixVectorArray -> MatrixArray, sizeof(MatrixStruct *) * TempArrayLenght);
 
     
@@ -287,7 +292,9 @@ int makeMatrixArrayBigger(int TempArrayLenght, char* Component) {
 }
 
 int getTrasposeMatrix(MatrixStruct *Matrix, int NewMatrixRows, int NewMatrixCols, int TempArrayLenght) {
+    // creacion de componente para errores de matriz traspuesta
     char Component[50];
+    // reserva de memoria para el contenido de la matriz traspuesta
     double **TempContentTraspose = calloc(NewMatrixCols, sizeof(*TempContentTraspose));
 
     if (TempContentTraspose == NULL) {
@@ -314,9 +321,9 @@ int getTrasposeMatrix(MatrixStruct *Matrix, int NewMatrixRows, int NewMatrixCols
 
         return 0;
     }
-
     Matrix -> contentTraspose = TempContentTraspose;
     
+    // llenado de la matriz traspuesta intercambiando filas por columnas
     for (int col = 0; col < NewMatrixCols; col++) {
         double *TempRowTraspose = calloc(NewMatrixRows, sizeof(*TempRowTraspose));
 
@@ -363,14 +370,17 @@ int getTrasposeMatrix(MatrixStruct *Matrix, int NewMatrixRows, int NewMatrixCols
 }
 
 void addVector() {
+    // nuevo tamano temporal del arreglo de vectores
     int TempArrayLenght = MatrixVectorArray -> VectorArrayLenght + 1;
     double x = 0;
     double y = 0;
     double z = 0;
 
+    // creacion de componente para errores
     char Component[50];
     snprintf(Component, sizeof(Component), "vector %d", TempArrayLenght);
     
+    // solicitud de componentes del vector
     printf("\n [*] Ingresa el valor de X:\n");
     printf(" --> ");
     scanf("%lf", &x);
@@ -383,11 +393,13 @@ void addVector() {
     printf(" --> ");
     scanf("%lf", &z);
 
+    // validacion para evitar almacenar un vector nulo
     if (x == 0 && y == 0 && z == 0) {
         showErrors(4, Component);
         return;
     }
 
+    // agrandamiento temporal del arreglo de vectores
     VectorStruct *TempVectorArray = realloc(MatrixVectorArray -> VectorArray, sizeof(*TempVectorArray) * TempArrayLenght);
 
     if (TempVectorArray == NULL) {
@@ -400,6 +412,7 @@ void addVector() {
     VectorStruct *Vector = &MatrixVectorArray -> VectorArray[ TempArrayLenght - 1 ];
     MatrixVectorArray -> VectorArrayLenght = TempArrayLenght;
 
+    // asignacion de valores al nuevo vector
     Vector -> X = x;
     Vector -> Y = y;
     Vector -> Z = z;
@@ -408,6 +421,7 @@ void addVector() {
 }
 
 void showAllMatrix(char *type) {
+    // validacion de existencia de matrices antes de mostrarlas
     if (MatrixVectorArray -> MatrixArrayLenght == 0) {
         showErrors(3, "Matriz");
         return;
@@ -415,6 +429,7 @@ void showAllMatrix(char *type) {
 
     printf("\n --> Listado de matrices %s <--\n", type);
 
+    // recorrido del arreglo de matrices para imprimir cada una
     for (int i = 0; i < MatrixVectorArray -> MatrixArrayLenght; i++) {
         MatrixStruct *Matrix = MatrixVectorArray -> MatrixArray[i];
         showMatrix(Matrix, type, i, 0);
@@ -424,6 +439,7 @@ void showAllMatrix(char *type) {
 }
 
 void showAllVectors() {
+    // impresion de todos los vectores almacenados
     printf("\n --> Lista de vectores <--\n");
     for (int i = 0; i < MatrixVectorArray -> VectorArrayLenght; i++) {
         VectorStruct Vector = MatrixVectorArray -> VectorArray[i];
@@ -433,14 +449,18 @@ void showAllVectors() {
 }
 
 void showMatrix(MatrixStruct *Matrix, char *type, int Position, int isBinarial) {
+        // impresion opcional del numero de matriz
         if (Position >= 0) printf("\n[#] Matriz #%d\n\n", Position + 1);
+        // seleccion de dimensiones segun si la matriz es original o traspuesta
         int rows = strcmp(type, "originales") == 0 ? Matrix -> rows : Matrix -> cols;
         int cols = strcmp(type, "originales") == 0 ? Matrix -> cols : Matrix -> rows;
 
         for (int row = 0; row < rows; row++) {
             for (int col = 0; col < cols; col++) {
+                // seleccion del valor a imprimir segun el tipo de matriz
                 double Value = strcmp(type, "originales") == 0 ? Matrix -> content[row][col] : Matrix -> contentTraspose[row][col];
                 
+                // calculo de espacios para alinear visualmente la matriz
                 int absValue = fabs(Value);
                 char *Spaces;
                 if (absValue >= 1000) {
@@ -462,6 +482,7 @@ void showMatrix(MatrixStruct *Matrix, char *type, int Position, int isBinarial) 
 }
 
 void showVector(VectorStruct Vector, int Position) {
+        // cadenas temporales para imprimir solo componentes no nulas
         char XValue[10];
         char YValue[10];
         char ZValue[10];
@@ -484,7 +505,7 @@ void showVector(VectorStruct Vector, int Position) {
 }
 
 void operations() {
-
+    // ciclo del menu de operaciones hasta regresar al menu principal
     int option;
     
     while(1) {
@@ -552,8 +573,10 @@ void operations() {
 }
 
 char **selectMatrixType(int numOfElements) {
+    // arreglo temporal para almacenar si cada matriz sera original o traspuesta
     char **matrixTypes = calloc(numOfElements, sizeof(*matrixTypes));
 
+    // seleccion del tipo de matriz para cada elemento solicitado
     for (int i = 0; i < numOfElements; i++) {
         int continueIterations = 0;
         while(!continueIterations) {
@@ -587,17 +610,21 @@ char **selectMatrixType(int numOfElements) {
 }
 
 void sumRestMatrix(char *OperationType) {
+    // nuevo tamano temporal del arreglo de matrices para guardar el resultado
     int TempArrayLenght = MatrixVectorArray -> MatrixArrayLenght + 1;
     int Operationfactor = 0;
 
+    // seleccion de tipos y matrices a operar
     char **matrixTypes = selectMatrixType(2);
     MatrixStruct **MatrixArray = getMatrixArray(OperationType, matrixTypes);
     
+    // validacion de dimensiones compatibles para suma o resta
     if (MatrixArray[0] -> cols != MatrixArray[1] -> cols || MatrixArray[0] -> rows != MatrixArray[1] -> rows) {
         showErrors(6, "");
         return;
     }
 
+    // definicion del signo de operacion segun suma o resta
     Operationfactor = (strcmp(OperationType, "sumar") == 0) ? 1 : -1;
 
     int rows = MatrixArray[0] -> rows;
@@ -609,6 +636,7 @@ void sumRestMatrix(char *OperationType) {
     resMatrix -> rows = rows;
     resMatrix -> cols = cols;
 
+    // calculo de cada celda de la matriz resultante
     for (int row = 0; row < rows; row++) {
         resMatrix -> content[row] = calloc(cols, sizeof(double));
         for (int col = 0; col < cols; col++) {
@@ -622,13 +650,17 @@ void sumRestMatrix(char *OperationType) {
 }
 
 void multMatrixMatrix() {
+    // nuevo tamano temporal del arreglo de matrices para guardar el resultado
     int TempArrayLenght = MatrixVectorArray -> MatrixArrayLenght + 1;
+    // seleccion de tipos y matrices a multiplicar
     char **matrixTypes = selectMatrixType(2);
     MatrixStruct **MatrixArray = getMatrixArray("multiplicacion de matrices", matrixTypes);
     
+    // obtencion de dimensiones necesarias para validar multiplicacion
     int verificationRows = (strcmp("originales", matrixTypes[0]) == 0) ? MatrixArray[1] -> rows : MatrixArray[1] -> trasposeRows;
     int verificationCols = (strcmp("originales", matrixTypes[1]) == 0) ? MatrixArray[0] -> cols : MatrixArray[0] -> trasposeCols;
 
+    // validacion de compatibilidad entre columnas de la primera y filas de la segunda
     if (verificationRows != verificationCols) {
         showErrors(6, "");
         return;
@@ -636,6 +668,7 @@ void multMatrixMatrix() {
 
     MatrixStruct *resMatrix = calloc(1, sizeof(*resMatrix));
 
+    // definicion de dimensiones de la matriz resultante
     int rows = (strcmp("originales", matrixTypes[0]) == 0) ? MatrixArray[0] -> rows : MatrixArray[0] -> trasposeRows;
     int cols = (strcmp("originales", matrixTypes[1]) == 0) ? MatrixArray[1] -> cols : MatrixArray[1] -> trasposeCols;
 
@@ -646,6 +679,7 @@ void multMatrixMatrix() {
 
     resMatrix -> content = calloc(rows, sizeof(double*));
 
+    // calculo de producto matriz por matriz
     for (int row = 0; row < rows; row++) {
         resMatrix -> content[row] = calloc(cols, sizeof(double));
         for (int col = 0; col < cols; col++) {
@@ -663,17 +697,21 @@ void multMatrixMatrix() {
 }
 
 void multEscalarMatrix() {
+    // nuevo tamano temporal del arreglo de matrices para guardar el resultado
     int TempArrayLenght = MatrixVectorArray -> MatrixArrayLenght + 1;
+    // seleccion del tipo de matriz a multiplicar por escalar
     char *matrixType = selectMatrixType(1)[0];
     
     MatrixStruct *Matrix = getMatrix(matrixType, "escalar por matriz", 0);
     MatrixStruct *resMatrix = calloc(1, sizeof(*resMatrix));
     
+    // solicitud del escalar multiplicador
     double factor;
     printf("\n [*] Ingresa el valor a multiplicar por la matriz\n");
     printf(" --> ");
     scanf("%lf", &factor);
 
+    // definicion de dimensiones segun matriz original o traspuesta
     int rows = (strcmp("originales", matrixType) == 0) ? Matrix -> rows : Matrix -> trasposeRows;
     int cols = (strcmp("originales", matrixType) == 0) ? Matrix -> cols : Matrix -> trasposeCols;
 
@@ -684,6 +722,7 @@ void multEscalarMatrix() {
 
     resMatrix -> content = calloc(rows, sizeof(double*));
 
+    // multiplicacion de cada celda por el escalar ingresado
     for (int row = 0; row < rows; row++) {
         resMatrix -> content[row] = calloc(cols, sizeof(double));
         for (int col = 0; col < cols; col++) {
@@ -696,18 +735,23 @@ void multEscalarMatrix() {
 }
 
 void identifyMatrixRelations() {
+    // seleccion de matriz para analizar relaciones binarias
     char *matrixType = selectMatrixType(1)[0];
     MatrixStruct *Matrix = getMatrix(matrixType, "relacion de matriz binaria", 1);
 
+    // obtencion de dimensiones segun tipo de matriz seleccionado
     int rows = (strcmp("originales", matrixType) == 0) ? Matrix -> rows : Matrix -> trasposeRows;
     int cols = (strcmp("originales", matrixType) == 0) ? Matrix -> cols : Matrix -> trasposeCols;
 
+    // validacion de que la matriz sea cuadrada y binaria
     if (!binarialMatrixValidation(Matrix, matrixType, rows, cols)) return;
 
+    // evaluacion de propiedades de relacion binaria
     int isReflexive = reflexiveValidation(Matrix, matrixType, rows, cols);
     int *symmetricRelations = symmetricValidation(Matrix, matrixType, rows, cols);
     int isTransitive = transitiveValidation(Matrix, matrixType, rows, cols);
 
+    // impresion de relaciones encontradas
     printf("\n --> Relaciones de la matriz binaria <--\n");
     if (isReflexive) printf(" [+] Reflexiva\n");
     if (symmetricRelations[0]) printf(" [+] Simetrica\n");
@@ -720,11 +764,13 @@ void identifyMatrixRelations() {
 }
 
 int binarialMatrixValidation(MatrixStruct *Matrix, char* matrixType, int rows, int cols) {
+    // validacion de matriz cuadrada
     if (rows != cols) {
         showErrors(6, "");
         return 0;
     }
 
+    // validacion de que todos los valores sean 0 o 1
     for (int row = 0; row < rows; row++) {
         for (int col = 0; col < cols; col++) {
             double value = getRowColMatrixValue(Matrix, matrixType, row, col);
@@ -739,6 +785,7 @@ int binarialMatrixValidation(MatrixStruct *Matrix, char* matrixType, int rows, i
 }
 
 int reflexiveValidation(MatrixStruct *Matrix, char* matrixType, int rows, int cols) {
+    // una relacion es reflexiva si toda la diagonal principal contiene 1
     for (int row = 0; row < rows; row++) {
         if (getRowColMatrixValue(Matrix, matrixType, row, row) != 1) return 0;
     }
@@ -746,11 +793,13 @@ int reflexiveValidation(MatrixStruct *Matrix, char* matrixType, int rows, int co
 }
 
 int *symmetricValidation(MatrixStruct *Matrix, char* matrixType, int rows, int cols) {
+    // contadores para evaluar simetria y asimetria
     int maxIterations = rows * cols;
     int symmetricIteration = 0;
     int asymmetricIteration = 0;
     int *results = calloc(2, sizeof(int));
 
+    // comparacion de cada posicion [i][j] con su posicion inversa [j][i]
     for (int row = 0; row < rows; row++) {
         for (int col =0; col < cols; col++) {
             double value1 = getRowColMatrixValue(Matrix, matrixType, row, col);
@@ -763,6 +812,7 @@ int *symmetricValidation(MatrixStruct *Matrix, char* matrixType, int rows, int c
         }
     }
 
+    // almacenamiento de resultados: [0] simetrica, [1] asimetrica
     results[0] = (symmetricIteration == maxIterations) ? 1 : 0;
     results[1] = (asymmetricIteration == maxIterations) ? 1 : 0;
 
@@ -770,6 +820,7 @@ int *symmetricValidation(MatrixStruct *Matrix, char* matrixType, int rows, int c
 }
 
 int transitiveValidation(MatrixStruct *Matrix, char* matrixType, int rows, int cols) {
+    // validacion de transitividad: si i se relaciona con j y j con k, entonces i debe relacionarse con k
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
             double value1 = getRowColMatrixValue(Matrix, matrixType, i, j);
@@ -786,12 +837,15 @@ int transitiveValidation(MatrixStruct *Matrix, char* matrixType, int rows, int c
 }
 
 void addExistMatrixToArray(MatrixStruct *Matrix, int TempArrayLenght) {
+    // creacion de componente para errores
     char Component[50];
     snprintf(Component, sizeof(Component), "matriz %d", TempArrayLenght);
 
+    // impresion de la matriz resultante antes de preguntar si se guarda
     printf("\n [*] Matriz resultante:\n");
     showMatrix(Matrix, "originales", -1, 0);
 
+    // almacenamiento opcional de la matriz resultante
     int confirm = confirmQuestion("Deseas agregar el vector resultante a la lista de vectores?");
     if (confirm) {
         makeMatrixArrayBigger(TempArrayLenght, Component);
@@ -804,6 +858,7 @@ void addExistMatrixToArray(MatrixStruct *Matrix, int TempArrayLenght) {
 }
 
 double getRowColMatrixValue(MatrixStruct *Matrix, char *MatrixType, int row, int col) {
+    // obtencion de valor segun matriz original o traspuesta
     if (strcmp(MatrixType, "originales") == 0) {
         return Matrix -> content[row][col];
     } else {
@@ -812,13 +867,16 @@ double getRowColMatrixValue(MatrixStruct *Matrix, char *MatrixType, int row, int
 }
 
 MatrixStruct *getMatrix(char* matrixType, char *OperationType, int isBinarial) {
+    // seleccion y confirmacion de una sola matriz
     int elementSelected;
     int confirm = 0;
     MatrixStruct *Matrix;
 
+    // arreglo auxiliar para reutilizar la funcion de seleccion de elementos
     char **matrixTypeArray = calloc(1, sizeof(char*));
     matrixTypeArray[0] = matrixType;
     
+    // repeticion hasta que el usuario confirme la matriz correcta
     while (!confirm) {
         elementSelected = selectElements("matrices", 1, matrixTypeArray, OperationType)[0];
 
@@ -831,11 +889,13 @@ MatrixStruct *getMatrix(char* matrixType, char *OperationType, int isBinarial) {
 }
 
 MatrixStruct **getMatrixArray(char *OperationType, char** matrixTypes) {
+    // seleccion y confirmacion de dos matrices
     int confirm = 0;
     int *elementsSelected = calloc(2, sizeof(*elementsSelected));
 
     MatrixStruct **MatrixArray = calloc(2, sizeof(*MatrixArray));
 
+    // repeticion hasta que el usuario confirme las matrices correctas
     while(!confirm) {
         elementsSelected = selectElements("matrices", 2, matrixTypes, OperationType);
         for (int i = 0; i < 2; i++) {
@@ -848,6 +908,7 @@ MatrixStruct **getMatrixArray(char *OperationType, char** matrixTypes) {
 }
 
 int confirmMatrix(MatrixStruct *Matrix, int numMatrix, char *MatrixType, int isBinarial) {
+    // confirmacion visual de una matriz seleccionada
     int confirm;
     
     printf("\n [!] Confirma la matriz a operar:\n");
@@ -861,6 +922,7 @@ int confirmMatrix(MatrixStruct *Matrix, int numMatrix, char *MatrixType, int isB
 int confirmMatrixArray(MatrixStruct *Matrix1, int numMatrix1, char *MatrixType1, MatrixStruct *Matrix2, 
         int numMatrix2, char *MatrixType2,char *OperationType) {
     
+    // confirmacion visual de dos matrices seleccionadas
     int confirm;
     
     printf("\n [!] Confirma las matrices a %s:\n", OperationType);
@@ -873,10 +935,12 @@ int confirmMatrixArray(MatrixStruct *Matrix1, int numMatrix1, char *MatrixType1,
 }
 
 void sumRestVectors(char *OperationType) {
+    // etiquetas para solicitar los dos vectores a operar
     char **vectorTypes = calloc(2, sizeof(char*));
     vectorTypes[0] = "vector 1";
     vectorTypes[1] = "vector 2";
 
+    // validacion de existencia de vectores antes de operar
     if (MatrixVectorArray -> VectorArrayLenght == 0) {
         showErrors(3, "vectores");
         return;
@@ -889,6 +953,7 @@ void sumRestVectors(char *OperationType) {
     VectorStruct Vector2;
     VectorStruct resVector;
 
+    // seleccion y confirmacion de vectores a operar
     while(!confirm) {
         numVectorSelected = selectElements("vectores", 2, vectorTypes, OperationType);
 
@@ -898,8 +963,10 @@ void sumRestVectors(char *OperationType) {
         confirm = confirmVectors(Vector1, Vector2, numVectorSelected[0], numVectorSelected[1], OperationType);
     }
 
+    // definicion del signo de operacion segun suma o resta
     operationFactor = (strcmp(OperationType, "sumar") == 0) ? 1 : -1;
 
+    // calculo del vector resultante componente por componente
     resVector.X = Vector1.X + Vector2.X * operationFactor;
     resVector.Y = Vector1.Y + Vector2.Y * operationFactor;
     resVector.Z = Vector1.Z + Vector2.Z * operationFactor;
@@ -909,6 +976,7 @@ void sumRestVectors(char *OperationType) {
 }
 
 void pointProduct() {
+    // seleccion y confirmacion de vectores para producto punto
     int confirm = 0;
     int *numVectorSelected;
     char *OperationType = "producto punto";
@@ -923,6 +991,7 @@ void pointProduct() {
     double zResult;
     double pointProductResult;
 
+    // repeticion hasta confirmar los vectores correctos
     while (!confirm) {
         numVectorSelected = selectElements("vectores", 2, vectorTypes, OperationType);
         vector1 = MatrixVectorArray -> VectorArray[numVectorSelected[0]]; 
@@ -930,6 +999,7 @@ void pointProduct() {
         confirm = confirmVectors(vector1, vector2, numVectorSelected[0], numVectorSelected[1], OperationType);
     }
     
+    // multiplicacion componente por componente y suma final
     xResult = vector1.X * vector2.X;
     yResult = vector1.Y * vector2.Y;
     zResult = vector1.Z * vector2.Z;
@@ -941,6 +1011,7 @@ void pointProduct() {
 }
 
 void crossProduct() {
+    // seleccion y confirmacion de vectores para producto cruz
     int confirm = 0;
     int *selectedElements;
     char *OperationType = "producto cruz";
@@ -952,6 +1023,7 @@ void crossProduct() {
     VectorStruct vector2;
     VectorStruct resVector;
 
+    // repeticion hasta confirmar los vectores correctos
     while (!confirm) {
         selectedElements = selectElements("vectores", 2, vectorTypes, OperationType);
         vector1 = MatrixVectorArray -> VectorArray[selectedElements[0]];
@@ -959,6 +1031,7 @@ void crossProduct() {
         confirm = confirmVectors(vector1, vector2, selectedElements[0], selectedElements[1], OperationType);
     }
 
+    // calculo del producto cruz usando determinantes por componente
     resVector.X = vector1.Y * vector2.Z - vector1.Z * vector2.Y;
     resVector.Y = vector1.Z * vector2.X - vector1.X * vector2.Z;
     resVector.Z = vector1.X * vector2.Y - vector1.Y * vector2.X;
@@ -968,10 +1041,12 @@ void crossProduct() {
 }
 
 void addExistVectorToArray(char *OperationType, VectorStruct Vector) {
+    // impresion del vector resultante antes de preguntar si se guarda
     printf("\n [*] Vector resultante:\n");
     showVector(Vector, -1);
 
     int confirm = confirmQuestion("Deseas agregar el vector resultante a la lista de vectores?");
+    // almacenamiento opcional del vector resultante
     if (confirm) {
         char Component[90];
         int tempVectorArrayLenght = MatrixVectorArray -> VectorArrayLenght + 1;
@@ -995,11 +1070,14 @@ void addExistVectorToArray(char *OperationType, VectorStruct Vector) {
 
 int *selectElements(char *variableType, int numElements, char **variables, char *OperationType) {
     
+    // arreglo temporal para guardar los indices seleccionados
     int *elementsSelected = calloc(numElements, sizeof(*elementsSelected));
+    // limite maximo segun se seleccionen vectores o matrices
     int maxElements = (strcmp("vectores", variableType) == 0) ? MatrixVectorArray -> VectorArrayLenght : MatrixVectorArray -> MatrixArrayLenght;
 
     printf("\n [*] Seleccion de %s a %s\n", variableType, OperationType);
 
+    // solicitud de cada elemento requerido para la operacion
     for (int i = 0; i < numElements; i++) {
         int confirm = 0;
 
@@ -1022,6 +1100,7 @@ int *selectElements(char *variableType, int numElements, char **variables, char 
 }
 
 int confirmVectors(VectorStruct Vector1, VectorStruct Vector2, int numVector1, int numVector2, char *OperationType) {
+    // confirmacion visual de los dos vectores seleccionados
     int confirm;
     
     printf("\n [!] Confirma los vectores a %s:\n", OperationType);
@@ -1034,6 +1113,7 @@ int confirmVectors(VectorStruct Vector1, VectorStruct Vector2, int numVector1, i
 }
 
 int confirmQuestion(char *question) {
+    // pregunta generica de confirmacion para reutilizar en el programa
     int option;
     while(1) {
         printf("\n [?] %s\n", question);
@@ -1053,6 +1133,7 @@ int confirmQuestion(char *question) {
 }
 
 void showErrors(int ErrorCode, char *Component) {
+    // impresion centralizada de errores segun codigo recibido
     printf("\n\n");
     switch(ErrorCode) {
         case 1:
