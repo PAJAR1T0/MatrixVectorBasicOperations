@@ -38,16 +38,20 @@ void showVector(VectorStruct Vector, int Position);
 void operations();
 char **selectMatrixType(int numOfElements);
 void sumRestMatrix(char *OperationType);
+void multMatrixMatrix();
+void multEscalarMatrix();
 void addExistMatrixToArray(MatrixStruct *Matrix, int TempArrayLenght);
 double getRowColMatrixValue(MatrixStruct *Matrix, char *MatrixType, int row, int col);
+MatrixStruct *getMatrix(char* matrixType, char *OperationType);
 MatrixStruct **getMatrixArray(char *OperationType, char** matrixTypes);
-int confirmMatrix(MatrixStruct *Matrix1, int numMatrix1, char *MatrixType1, MatrixStruct *Matrix2, 
+int confirmMatrix(MatrixStruct *Matrix, int numMatrix, char *MatrixType);
+int confirmMatrixArray(MatrixStruct *Matrix1, int numMatrix1, char *MatrixType1, MatrixStruct *Matrix2, 
         int numMatrix2, char *MatrixType2,char *OperationType);
 void sumRestVectors(char *OperationType);
 void pointProduct();
 void crossProduct();
 void addExistVectorToArray(char *OperationType, VectorStruct Vector);
-int *selectElements(char *variableType, char *variable1, char *variable2, char *OperationType);
+int *selectElements(char *variableType, int numElements, char **variables, char *OperationType);
 int confirmVectors(VectorStruct Vector1, VectorStruct Vector2, int numVector1, int numVector2, char *OperationType);
 int confirmQuestion(char *question);
 void showErrors(int ErrorCode, char *Component);
@@ -424,7 +428,7 @@ void showAllVectors() {
 }
 
 void showMatrix(MatrixStruct *Matrix, char *type, int Position) {
-        if (Position >= 0) printf("\n[#] Matriz #%d\n\n", Position);
+        if (Position >= 0) printf("\n[#] Matriz #%d\n\n", Position + 1);
         int rows = strcmp(type, "originales") == 0 ? Matrix -> rows : Matrix -> cols;
         int cols = strcmp(type, "originales") == 0 ? Matrix -> cols : Matrix -> rows;
 
@@ -498,19 +502,27 @@ void operations() {
                 return;
 
             case 1:
-                sumRestMatrix("suma");
+                sumRestMatrix("sumar");
                 break;
 
             case 2:
-                sumRestMatrix("resta");
+                sumRestMatrix("restar");
+                break;
+
+            case 3:
+                multMatrixMatrix();
+                break;
+            
+            case 4:
+                multEscalarMatrix();
                 break;
 
             case 6:
-                sumRestVectors("suma");
+                sumRestVectors("sumar");
                 break;
             
             case 7: 
-                sumRestVectors("resta");
+                sumRestVectors("restar");
                 break;
 
             case 8:
@@ -575,7 +587,7 @@ void sumRestMatrix(char *OperationType) {
         return;
     }
 
-    Operationfactor = (strcmp(OperationType, "suma") == 0) ? 1 : -1;
+    Operationfactor = (strcmp(OperationType, "sumar") == 0) ? 1 : -1;
 
     int rows = MatrixArray[0] -> rows;
     int cols = MatrixArray[0] -> cols;
@@ -591,6 +603,80 @@ void sumRestMatrix(char *OperationType) {
         for (int col = 0; col < cols; col++) {
             resMatrix -> content[row][col] = getRowColMatrixValue(MatrixArray[0], matrixTypes[0], row, col) + 
                                              getRowColMatrixValue(MatrixArray[1], matrixTypes[1], row, col) * Operationfactor;
+        }
+    }
+    getTrasposeMatrix(resMatrix, rows, cols, TempArrayLenght);
+    addExistMatrixToArray(resMatrix, TempArrayLenght);
+    return;
+}
+
+void multMatrixMatrix() {
+    int TempArrayLenght = MatrixVectorArray -> MatrixArrayLenght + 1;
+    char **matrixTypes = selectMatrixType(2);
+    MatrixStruct **MatrixArray = getMatrixArray("multiplicacion de matrices", matrixTypes);
+    
+    int verificationRows = (strcmp("originales", matrixTypes[0]) == 0) ? MatrixArray[1] -> rows : MatrixArray[1] -> trasposeRows;
+    int verificationCols = (strcmp("originales", matrixTypes[1]) == 0) ? MatrixArray[0] -> cols : MatrixArray[0] -> trasposeCols;
+
+    if (verificationRows != verificationCols) {
+        showErrors(6, "");
+        return;
+    }
+
+    MatrixStruct *resMatrix = calloc(1, sizeof(*resMatrix));
+
+    int rows = (strcmp("originales", matrixTypes[0]) == 0) ? MatrixArray[0] -> rows : MatrixArray[0] -> trasposeRows;
+    int cols = (strcmp("originales", matrixTypes[1]) == 0) ? MatrixArray[1] -> cols : MatrixArray[1] -> trasposeCols;
+
+    resMatrix -> rows = rows;
+    resMatrix -> cols = cols;
+    resMatrix -> trasposeRows = cols;
+    resMatrix -> trasposeCols = rows;
+
+    resMatrix -> content = calloc(rows, sizeof(double*));
+
+    for (int row = 0; row < rows; row++) {
+        resMatrix -> content[row] = calloc(cols, sizeof(double));
+        for (int col = 0; col < cols; col++) {
+            double value = 0;
+            for (int i = 0; i < MatrixArray[0] -> cols; i++) {
+                value += getRowColMatrixValue(MatrixArray[0], matrixTypes[0], row, i) * 
+                         getRowColMatrixValue(MatrixArray[1], matrixTypes[1], i, col);
+            }
+            resMatrix -> content[row][col] = value;
+        }
+    }
+    getTrasposeMatrix(resMatrix, rows, cols, TempArrayLenght);
+    addExistMatrixToArray(resMatrix, TempArrayLenght);
+    return;
+}
+
+void multEscalarMatrix() {
+    int TempArrayLenght = MatrixVectorArray -> MatrixArrayLenght + 1;
+    char *matrixType = selectMatrixType(1)[0];
+    
+    MatrixStruct *Matrix = getMatrix(matrixType, "escalar por matriz");
+    MatrixStruct *resMatrix = calloc(1, sizeof(*resMatrix));
+    
+    double factor;
+    printf("\n [*] Ingresa el valor a multiplicar por la matriz\n");
+    printf(" --> ");
+    scanf("%lf", &factor);
+
+    int rows = (strcmp("originales", matrixType) == 0) ? Matrix -> rows : Matrix -> trasposeRows;
+    int cols = (strcmp("originales", matrixType) == 0) ? Matrix -> cols : Matrix -> trasposeCols;
+
+    resMatrix -> rows = rows;
+    resMatrix -> cols = cols;
+    resMatrix -> trasposeRows = cols;
+    resMatrix -> trasposeCols = rows;
+
+    resMatrix -> content = calloc(rows, sizeof(double*));
+
+    for (int row = 0; row < rows; row++) {
+        resMatrix -> content[row] = calloc(cols, sizeof(double));
+        for (int col = 0; col < cols; col++) {
+            resMatrix -> content[row][col] = getRowColMatrixValue(Matrix, matrixType, row, col) * factor;
         }
     }
     getTrasposeMatrix(resMatrix, rows, cols, TempArrayLenght);
@@ -624,6 +710,25 @@ double getRowColMatrixValue(MatrixStruct *Matrix, char *MatrixType, int row, int
     }
 }
 
+MatrixStruct *getMatrix(char* matrixType, char *OperationType) {
+    int elementSelected;
+    int confirm = 0;
+    MatrixStruct *Matrix;
+
+    char **matrixTypeArray = calloc(1, sizeof(char*));
+    matrixTypeArray[0] = matrixType;
+    
+    while (!confirm) {
+        elementSelected = selectElements("matrices", 1, matrixTypeArray, OperationType)[0];
+
+        Matrix = MatrixVectorArray -> MatrixArray[elementSelected];
+
+        confirm = confirmMatrix(Matrix, elementSelected, matrixType);
+    }
+
+    return Matrix;
+}
+
 MatrixStruct **getMatrixArray(char *OperationType, char** matrixTypes) {
     int confirm = 0;
     int *elementsSelected = calloc(2, sizeof(*elementsSelected));
@@ -631,17 +736,28 @@ MatrixStruct **getMatrixArray(char *OperationType, char** matrixTypes) {
     MatrixStruct **MatrixArray = calloc(2, sizeof(*MatrixArray));
 
     while(!confirm) {
-        elementsSelected = selectElements("matrices", matrixTypes[0], matrixTypes[1], OperationType);
+        elementsSelected = selectElements("matrices", 2, matrixTypes, OperationType);
         for (int i = 0; i < 2; i++) {
             MatrixArray[i] = MatrixVectorArray -> MatrixArray[elementsSelected[i]];
         }
-        confirm = confirmMatrix(MatrixArray[0], elementsSelected[0], matrixTypes[0], MatrixArray[1], 
+        confirm = confirmMatrixArray(MatrixArray[0], elementsSelected[0], matrixTypes[0], MatrixArray[1], 
             elementsSelected[1], matrixTypes[1], OperationType);
     }
     return MatrixArray;
 }
 
-int confirmMatrix(MatrixStruct *Matrix1, int numMatrix1, char *MatrixType1, MatrixStruct *Matrix2, 
+int confirmMatrix(MatrixStruct *Matrix, int numMatrix, char *MatrixType) {
+    int confirm;
+    
+    printf("\n [!] Confirma la matriz a operar:\n");
+
+    showMatrix(Matrix, MatrixType, numMatrix);
+
+    confirm = confirmQuestion("Es correcta?");
+    return confirm;
+}
+
+int confirmMatrixArray(MatrixStruct *Matrix1, int numMatrix1, char *MatrixType1, MatrixStruct *Matrix2, 
         int numMatrix2, char *MatrixType2,char *OperationType) {
     
     int confirm;
@@ -656,6 +772,10 @@ int confirmMatrix(MatrixStruct *Matrix1, int numMatrix1, char *MatrixType1, Matr
 }
 
 void sumRestVectors(char *OperationType) {
+    char **vectorTypes = calloc(2, sizeof(char*));
+    vectorTypes[0] = "vector 1";
+    vectorTypes[1] = "vector 2";
+
     if (MatrixVectorArray -> VectorArrayLenght == 0) {
         showErrors(3, "vectores");
         return;
@@ -669,7 +789,7 @@ void sumRestVectors(char *OperationType) {
     VectorStruct resVector;
 
     while(!confirm) {
-        numVectorSelected = selectElements("vectores", "vector 1", "vector 2", OperationType);
+        numVectorSelected = selectElements("vectores", 2, vectorTypes, OperationType);
 
         Vector1 = MatrixVectorArray -> VectorArray[numVectorSelected[0]];
         Vector2 = MatrixVectorArray -> VectorArray[numVectorSelected[1]];
@@ -677,7 +797,7 @@ void sumRestVectors(char *OperationType) {
         confirm = confirmVectors(Vector1, Vector2, numVectorSelected[0], numVectorSelected[1], OperationType);
     }
 
-    operationFactor = (strcmp(OperationType, "suma") == 0) ? 1 : -1;
+    operationFactor = (strcmp(OperationType, "sumar") == 0) ? 1 : -1;
 
     resVector.X = Vector1.X + Vector2.X * operationFactor;
     resVector.Y = Vector1.Y + Vector2.Y * operationFactor;
@@ -691,6 +811,9 @@ void pointProduct() {
     int confirm = 0;
     int *numVectorSelected;
     char *OperationType = "producto punto";
+    char **vectorTypes = calloc(2, sizeof(char*));
+    vectorTypes[0] = "vector 1";
+    vectorTypes[1] = "vector 2";
 
     VectorStruct vector1;
     VectorStruct vector2;
@@ -700,7 +823,7 @@ void pointProduct() {
     double pointProductResult;
 
     while (!confirm) {
-        numVectorSelected = selectElements("vectores", "vector 1", "vector 2", OperationType);
+        numVectorSelected = selectElements("vectores", 2, vectorTypes, OperationType);
         vector1 = MatrixVectorArray -> VectorArray[numVectorSelected[0]]; 
         vector2 = MatrixVectorArray -> VectorArray[numVectorSelected[1]]; 
         confirm = confirmVectors(vector1, vector2, numVectorSelected[0], numVectorSelected[1], OperationType);
@@ -720,12 +843,16 @@ void crossProduct() {
     int confirm = 0;
     int *selectedElements;
     char *OperationType = "producto cruz";
+    char **vectorTypes = calloc(2, sizeof(char*));
+    vectorTypes[0] = "vector 1";
+    vectorTypes[1] = "vector 2";
+
     VectorStruct vector1;
     VectorStruct vector2;
     VectorStruct resVector;
 
     while (!confirm) {
-        selectedElements = selectElements("vectores", "vector 1", "vector 2", OperationType);
+        selectedElements = selectElements("vectores", 2, vectorTypes, OperationType);
         vector1 = MatrixVectorArray -> VectorArray[selectedElements[0]];
         vector2 = MatrixVectorArray -> VectorArray[selectedElements[1]];
         confirm = confirmVectors(vector1, vector2, selectedElements[0], selectedElements[1], OperationType);
@@ -765,21 +892,30 @@ void addExistVectorToArray(char *OperationType, VectorStruct Vector) {
     }
 }
 
-int *selectElements(char *variableType, char *variable1, char *variable2, char *OperationType) {
-    int *elementsSelected = calloc(2, sizeof(*elementsSelected));
+int *selectElements(char *variableType, int numElements, char **variables, char *OperationType) {
+    
+    int *elementsSelected = calloc(numElements, sizeof(*elementsSelected));
+    int maxElements = (strcmp("vectores", variableType) == 0) ? MatrixVectorArray -> VectorArrayLenght : MatrixVectorArray -> MatrixArrayLenght;
 
     printf("\n [*] Seleccion de %s a %s\n", variableType, OperationType);
 
-    printf("\n [#] Ingresa el numero de %s:\n", variable1);
-    printf(" --> ");
-    scanf("%d", &elementsSelected[0]);
+    for (int i = 0; i < numElements; i++) {
+        int confirm = 0;
 
-    printf("\n [#] Ingresa el numero de %s:\n", variable2);
-    printf(" --> ");
-    scanf("%d", &elementsSelected[1]);
+        while (!confirm) {
+            printf("\n [#] Ingresa el numero de %s:\n", variables[i]);
+            printf(" --> ");
+            scanf("%d", &elementsSelected[i]);
 
-    elementsSelected[0] -= 1;
-    elementsSelected[1] -= 1;
+            if (elementsSelected[i] <= maxElements && elementsSelected[i] > 0) {
+                confirm = 1;
+            } else {
+                showErrors(5, "");
+            }
+        }
+
+        elementsSelected[i] -= 1;
+    }
 
     return elementsSelected;
 }
@@ -816,7 +952,7 @@ int confirmQuestion(char *question) {
 }
 
 void showErrors(int ErrorCode, char *Component) {
-    printf("\n");
+    printf("\n\n");
     switch(ErrorCode) {
         case 1:
             printf(" [!] Error 1 (memoryError): Reserva de memoria en %s fallida.", Component);
@@ -831,10 +967,10 @@ void showErrors(int ErrorCode, char *Component) {
             printf(" [!] Error 4 (nullVector): El %s ingresado es nulo.", Component);
             break;
         case 5:
-            printf(" [!] Error 5 (wrongValue): El valor ingresado es incorrecto");
+            printf(" [!] Error 5 (wrongValue): El valor ingresado es incorrecto.");
             break;
         case 6: 
-            printf(" [!] Error 6 (notSquareMatrix): No hay coincidencia entre el numero de filas y columnas de ambas matrices");
+            printf(" [!] Error 6 (notSquareMatrix): No hay coincidencia entre el numero de filas y columnas de ambas matrices.");
             break;
         default: 
             printf(" [!] Error desconocido en componente %s.", Component);
