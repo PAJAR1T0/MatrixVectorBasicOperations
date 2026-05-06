@@ -33,18 +33,23 @@ int getTrasposeMatrix(MatrixStruct *Matrix, int NewMatrixRows, int NewMatrixCols
 void addVector();
 void showAllMatrix(char *type);
 void showAllVectors();
-void showMatrix(MatrixStruct *Matrix, char *type, int Position);
+void showMatrix(MatrixStruct *Matrix, char *type, int Position, int isBinarial);
 void showVector(VectorStruct Vector, int Position);
 void operations();
 char **selectMatrixType(int numOfElements);
 void sumRestMatrix(char *OperationType);
 void multMatrixMatrix();
 void multEscalarMatrix();
+void identifyMatrixRelations();
+int binarialMatrixValidation(MatrixStruct *Matrix, char* matrixType, int rows, int cols);
+int reflexiveValidation(MatrixStruct *Matrix, char* matrixType, int rows, int cols);
+int *symmetricValidation(MatrixStruct *Matrix, char* matrixType, int rows, int cols);
+int transitiveValidation(MatrixStruct *Matrix, char* matrixType, int rows, int cols);
 void addExistMatrixToArray(MatrixStruct *Matrix, int TempArrayLenght);
 double getRowColMatrixValue(MatrixStruct *Matrix, char *MatrixType, int row, int col);
-MatrixStruct *getMatrix(char* matrixType, char *OperationType);
+MatrixStruct *getMatrix(char* matrixType, char *OperationType, int isBinarial);
 MatrixStruct **getMatrixArray(char *OperationType, char** matrixTypes);
-int confirmMatrix(MatrixStruct *Matrix, int numMatrix, char *MatrixType);
+int confirmMatrix(MatrixStruct *Matrix, int numMatrix, char *MatrixType, int isBinarial);
 int confirmMatrixArray(MatrixStruct *Matrix1, int numMatrix1, char *MatrixType1, MatrixStruct *Matrix2, 
         int numMatrix2, char *MatrixType2,char *OperationType);
 void sumRestVectors(char *OperationType);
@@ -412,7 +417,7 @@ void showAllMatrix(char *type) {
 
     for (int i = 0; i < MatrixVectorArray -> MatrixArrayLenght; i++) {
         MatrixStruct *Matrix = MatrixVectorArray -> MatrixArray[i];
-        showMatrix(Matrix, type, i + 1);
+        showMatrix(Matrix, type, i, 0);
     }
     printf("\n");
     return;
@@ -427,7 +432,7 @@ void showAllVectors() {
     return;
 }
 
-void showMatrix(MatrixStruct *Matrix, char *type, int Position) {
+void showMatrix(MatrixStruct *Matrix, char *type, int Position, int isBinarial) {
         if (Position >= 0) printf("\n[#] Matriz #%d\n\n", Position + 1);
         int rows = strcmp(type, "originales") == 0 ? Matrix -> rows : Matrix -> cols;
         int cols = strcmp(type, "originales") == 0 ? Matrix -> cols : Matrix -> rows;
@@ -448,7 +453,9 @@ void showMatrix(MatrixStruct *Matrix, char *type, int Position) {
                     Spaces = "   ";
                 }
 
-                printf("%s%.2lf ", Spaces, Value);
+                if (isBinarial) {
+                    printf("%s%.0lf ", Spaces, Value);
+                } else printf("%s%.2lf ", Spaces, Value);
             }
             printf("\n");
         }
@@ -515,6 +522,10 @@ void operations() {
             
             case 4:
                 multEscalarMatrix();
+                break;
+
+            case 5:
+                identifyMatrixRelations();
                 break;
 
             case 6:
@@ -655,7 +666,7 @@ void multEscalarMatrix() {
     int TempArrayLenght = MatrixVectorArray -> MatrixArrayLenght + 1;
     char *matrixType = selectMatrixType(1)[0];
     
-    MatrixStruct *Matrix = getMatrix(matrixType, "escalar por matriz");
+    MatrixStruct *Matrix = getMatrix(matrixType, "escalar por matriz", 0);
     MatrixStruct *resMatrix = calloc(1, sizeof(*resMatrix));
     
     double factor;
@@ -684,12 +695,102 @@ void multEscalarMatrix() {
     return;
 }
 
+void identifyMatrixRelations() {
+    char *matrixType = selectMatrixType(1)[0];
+    MatrixStruct *Matrix = getMatrix(matrixType, "relacion de matriz binaria", 1);
+
+    int rows = (strcmp("originales", matrixType) == 0) ? Matrix -> rows : Matrix -> trasposeRows;
+    int cols = (strcmp("originales", matrixType) == 0) ? Matrix -> cols : Matrix -> trasposeCols;
+
+    if (!binarialMatrixValidation(Matrix, matrixType, rows, cols)) return;
+
+    int isReflexive = reflexiveValidation(Matrix, matrixType, rows, cols);
+    int *symmetricRelations = symmetricValidation(Matrix, matrixType, rows, cols);
+    int isTransitive = transitiveValidation(Matrix, matrixType, rows, cols);
+
+    printf("\n --> Relaciones de la matriz binaria <--\n");
+    if (isReflexive) printf(" [+] Reflexiva\n");
+    if (symmetricRelations[0]) printf(" [+] Simetrica\n");
+    if (symmetricRelations[1]) printf(" [+] Asimetrica\n");
+    if (isTransitive) printf(" [+] Transitiva");
+    if (!isReflexive && !symmetricRelations[0] && !symmetricRelations[1] && !isTransitive) printf(" [!] No hay relaciones\n");
+    printf("\n");
+
+    return;
+}
+
+int binarialMatrixValidation(MatrixStruct *Matrix, char* matrixType, int rows, int cols) {
+    if (rows != cols) {
+        showErrors(6, "");
+        return 0;
+    }
+
+    for (int row = 0; row < rows; row++) {
+        for (int col = 0; col < cols; col++) {
+            double value = getRowColMatrixValue(Matrix, matrixType, row, col);
+            if (value != 0 && value != 1) {
+                showErrors(7, "");
+                return 0;
+            }
+        }
+    }
+
+    return 1;
+}
+
+int reflexiveValidation(MatrixStruct *Matrix, char* matrixType, int rows, int cols) {
+    for (int row = 0; row < rows; row++) {
+        if (getRowColMatrixValue(Matrix, matrixType, row, row) != 1) return 0;
+    }
+    return 1;
+}
+
+int *symmetricValidation(MatrixStruct *Matrix, char* matrixType, int rows, int cols) {
+    int maxIterations = rows * cols;
+    int symmetricIteration = 0;
+    int asymmetricIteration = 0;
+    int *results = calloc(2, sizeof(int));
+
+    for (int row = 0; row < rows; row++) {
+        for (int col =0; col < cols; col++) {
+            double value1 = getRowColMatrixValue(Matrix, matrixType, row, col);
+            double value2 = getRowColMatrixValue(Matrix, matrixType, col, row);
+            if (value1 == 1 && value2 == 1) {
+                symmetricIteration += 1;
+            } else {
+                asymmetricIteration += 1;
+            };
+        }
+    }
+
+    results[0] = (symmetricIteration == maxIterations) ? 1 : 0;
+    results[1] = (asymmetricIteration == maxIterations) ? 1 : 0;
+
+    return results;
+}
+
+int transitiveValidation(MatrixStruct *Matrix, char* matrixType, int rows, int cols) {
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            double value1 = getRowColMatrixValue(Matrix, matrixType, i, j);
+            for (int k = 0; k < cols; k++) {
+                double value2 = getRowColMatrixValue(Matrix, matrixType, j, k);
+                if (value1 == 1 && value2 == 1) {
+                    double value3 = getRowColMatrixValue(Matrix, matrixType, i, k);
+                    if (value3 != 1) return 0;
+                }
+            }
+        }
+    }
+    return 1;
+}
+
 void addExistMatrixToArray(MatrixStruct *Matrix, int TempArrayLenght) {
     char Component[50];
     snprintf(Component, sizeof(Component), "matriz %d", TempArrayLenght);
 
     printf("\n [*] Matriz resultante:\n");
-    showMatrix(Matrix, "originales", -1);
+    showMatrix(Matrix, "originales", -1, 0);
 
     int confirm = confirmQuestion("Deseas agregar el vector resultante a la lista de vectores?");
     if (confirm) {
@@ -710,7 +811,7 @@ double getRowColMatrixValue(MatrixStruct *Matrix, char *MatrixType, int row, int
     }
 }
 
-MatrixStruct *getMatrix(char* matrixType, char *OperationType) {
+MatrixStruct *getMatrix(char* matrixType, char *OperationType, int isBinarial) {
     int elementSelected;
     int confirm = 0;
     MatrixStruct *Matrix;
@@ -723,7 +824,7 @@ MatrixStruct *getMatrix(char* matrixType, char *OperationType) {
 
         Matrix = MatrixVectorArray -> MatrixArray[elementSelected];
 
-        confirm = confirmMatrix(Matrix, elementSelected, matrixType);
+        confirm = confirmMatrix(Matrix, elementSelected, matrixType, isBinarial);
     }
 
     return Matrix;
@@ -746,12 +847,12 @@ MatrixStruct **getMatrixArray(char *OperationType, char** matrixTypes) {
     return MatrixArray;
 }
 
-int confirmMatrix(MatrixStruct *Matrix, int numMatrix, char *MatrixType) {
+int confirmMatrix(MatrixStruct *Matrix, int numMatrix, char *MatrixType, int isBinarial) {
     int confirm;
     
     printf("\n [!] Confirma la matriz a operar:\n");
 
-    showMatrix(Matrix, MatrixType, numMatrix);
+    showMatrix(Matrix, MatrixType, numMatrix, isBinarial);
 
     confirm = confirmQuestion("Es correcta?");
     return confirm;
@@ -764,8 +865,8 @@ int confirmMatrixArray(MatrixStruct *Matrix1, int numMatrix1, char *MatrixType1,
     
     printf("\n [!] Confirma las matrices a %s:\n", OperationType);
         
-    showMatrix(Matrix1, MatrixType1, numMatrix1);
-    showMatrix(Matrix2, MatrixType2, numMatrix2);
+    showMatrix(Matrix1, MatrixType1, numMatrix1, 0);
+    showMatrix(Matrix2, MatrixType2, numMatrix2, 0);
 
     confirm = confirmQuestion("Son correctas?");
     return confirm;
@@ -971,6 +1072,9 @@ void showErrors(int ErrorCode, char *Component) {
             break;
         case 6: 
             printf(" [!] Error 6 (notSquareMatrix): No hay coincidencia entre el numero de filas y columnas de ambas matrices.");
+            break;
+        case 7: 
+            printf(" [!] Error 7 (notBinarialMatrix): La matriz ingresada no es binaria.");
             break;
         default: 
             printf(" [!] Error desconocido en componente %s.", Component);
