@@ -94,7 +94,7 @@ void welcome() {
         " ,--.;`|  | '..--.\n"
         "/;' \"' ;  '..--.  ))\n"
         "\\:.___(___   ) ))'\n"
-        "       SSt`-'-''\n"
+        "          `-'-''\n"
         "\n"
         "    [!] Matrix & Vector System\n"
     );
@@ -878,7 +878,7 @@ void addExistMatrixToArray(MatrixStruct *Matrix, int TempArrayLenght) {
     showMatrix(Matrix, "originales", -1, 0);
 
     // almacenamiento opcional de la matriz resultante
-    int confirm = confirmQuestion("Deseas agregar el vector resultante a la lista de vectores?");
+    int confirm = confirmQuestion("Deseas agregar la matriz resultante a la lista de matrices?");
     if (confirm) {
         makeMatrixArrayBigger(TempArrayLenght, Component);
         MatrixVectorArray -> MatrixArray[TempArrayLenght - 1] = Matrix;
